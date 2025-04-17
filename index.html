@@ -2228,115 +2228,318 @@
       <div id="container" style="width:100%;height:calc(100% - 35px);"></div>
   </div>
   <style>
-      .editor-container {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-      }
-      .tabs-container {
-          background-color: #414141;
-          display: flex;
-          height: 35px;
-          overflow-x: auto;
-          border-bottom: 1px solid #333;
-          gap: 0;
-      }
-      .tab {
-          display: flex;
-          align-items: center;
-          padding: 0 15px;
-          background-color: #2d2d2d;
-          color: #969696;
-          border-right: 1px solid #1e1e1e;
-          min-width: 120px;
-          max-width: 200px;
-          position: relative;
-          cursor: pointer;
-          transition: background-color 0.2s, color 0.2s;
-          user-select: none;
-      }
-      .tab.active {
-          background-color: #a3a3a3;
-          color: #ffffff;
-      }
-      .tab-icon {
-          width: 20px;
-          height: 20px;
-          margin-right: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center; 
-          position: relative; 
-          top: 2px;
-      }
-      .tab-icon svg {
-          width: 16px;
-          height: 16px;
-      }
-      .tab-title {
-          flex-grow: 1;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          font-size: 13px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      }
-      .tab-title.editing {
-          background: #3d3d3d;
-          border: 1px solid #525252;
-          padding: 2px 4px;
-          border-radius: 3px;
-          outline: none;
-      }
-      .tab-close {
-          margin-left: 8px;
-          opacity: 0.7;
-          transition: opacity 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 16px;
-          height: 16px;
-          border-radius: 3px;
-      }
-      .tab-close:hover {
-          opacity: 1;
-          background-color: rgba(255,255,255,0.1);
-      }
-      .tab.new-tab {
-          min-width: 10px;
-          max-width: 10px;
-          justify-content: center;
-          background-color: transparent;
-          border: none;
-          margin-left: -2px;
-      }
-      .tab.new-tab:hover {
-          background-color: rgba(255,255,255,0.1);
-      }
-      @keyframes tabAppear {
-          from {
-              opacity: 0;
-              transform: translateY(-10px);
-          }
-          to {
-              opacity: 1;
-              transform: translateY(0);
-          }
-      }
-      @keyframes tabRemove {
-          to {
-              opacity: 0;
-              transform: translateX(-10px);
-          }
-      }
-      .tab.new {
-          animation: tabAppear 0.2s ease-out;
-      }
-      .tab.removing {
-          animation: tabRemove 0.2s ease-out;
-      }
+:root {
+  --bg-tabs: linear-gradient(145deg, #1c1c20, #26262a);
+  --tab-bg: #2a2a2e;
+  --tab-active-bg: linear-gradient(180deg, #9b59b6, #663399);
+  --tab-hover-bg: rgba(255, 255, 255, 0.1);
+  --tab-color: #dcdce1;
+  --tab-active-color: #ffffff;
+  --border-color: rgba(255, 255, 255, 0.15);
+  --editing-bg: rgba(38, 38, 44, 0.9);
+  --editing-border: #9b59b6;
+  --close-hover-bg: rgba(255, 255, 255, 0.3);
+  --new-tab-hover: rgba(155, 89, 182, 0.25);
+  --focus-outline: #9b59b6;
+  --scrollbar-color: #9b59b6;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --glow-color: rgba(155, 89, 182, 0.4);
+}
+
+.editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--bg-tabs);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+
+.editor-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0, var(--glow-color), transparent 70%);
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.tabs-container {
+  background: var(--bg-tabs);
+  display: flex;
+  height: 2.75rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 3px 8px var(--shadow-color);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-color) transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.tabs-container::-webkit-scrollbar {
+  height: 5px;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
+  border-radius: 5px;
+  box-shadow: 0 0 6px var(--glow-color);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  background: var(--tab-bg);
+  color: var(--tab-color);
+  border-right: 1px solid var(--border-color);
+  min-width: clamp(100px, 16vw, 160px);
+  max-width: 220px;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  gap: 0.75rem;
+  position: relative;
+  border-radius: 6px 6px 0 0;
+  z-index: 1;
+}
+
+.tab:hover {
+  background: var(--tab-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px var(--shadow-color);
+}
+
+.tab.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-color);
+  z-index: 2;
+  box-shadow: inset 0 -3px 0 var(--focus-outline), 0 0 12px var(--glow-color);
+  transform: translateY(-1px);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: -2px;
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+.tab-icon {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.tab:hover .tab-icon {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+.tab-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+  filter: drop-shadow(0 1px 2px var(--shadow-color));
+}
+
+.tab-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px var(--shadow-color);
+}
+
+.tab-title.editing {
+  background: var(--editing-bg);
+  border: 1px solid var(--editing-border);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  outline: none;
+  width: 100%;
+  box-shadow: 0 3px 8px var(--shadow-color);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--tab-active-color);
+}
+
+.tab-close {
+  flex-shrink: 0;
+  margin-left: 0.75rem;
+  padding: 0; /* Ensure no padding interferes with click area */
+  opacity: 1; /* Full opacity for visibility */
+  transition: background 0.2s ease, transform 0.3s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer; /* Ensure cursor indicates clickability */
+  z-index: 3; /* High z-index to prevent overlap issues */
+}
+
+.tab-close:hover {
+  background: var(--close-hover-bg);
+  transform: rotate(90deg);
+  box-shadow: 0 0 6px var(--glow-color);
+}
+
+.tab-close:focus-visible {
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+.tab-close svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: var(--tab-color);
+}
+
+.tab.new-tab {
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: background 0.2s ease, transform 0.3s ease, box-shadow 0.2s ease;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.tab.new-tab:hover {
+  background: var(--new-tab-hover);
+  transform: scale(1.15);
+  box-shadow: 0 0 8px var(--glow-color);
+}
+
+@keyframes tabAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tabRemove {
+  to {
+    opacity: 0;
+    transform: translateX(-0.75rem) scale(0.95);
+  }
+}
+
+@keyframes softGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--glow-color);
+  }
+  50% {
+    box-shadow: 0 0 12px var(--glow-color);
+  }
+}
+
+.tab.new {
+  animation: tabAppear 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab.removing {
+  animation: tabRemove 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.tab.active {
+  animation: softGlow 2s infinite ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .tab {
+    min-width: clamp(80px, 20vw, 130px);
+    padding: 0 1rem;
+  }
+
+  .tab-title {
+    font-size: 0.85rem;
+  }
+
+  .tab-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .tab-close {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .tab-close svg {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  .tab.new-tab {
+    min-width: 2rem;
+    max-width: 2rem;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .tab {
+    border-right: 2px solid #ffffff;
+  }
+
+  .tab.active {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .tab-icon svg,
+  .tab-close svg {
+    fill: #000000;
+  }
+
+  .tab-title {
+    text-shadow: none;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .tab-close,
+  .tab-icon,
+  .tab.new-tab {
+    transition: none;
+  }
+
+  .tab.new,
+  .tab.removing,
+  .tab.active {
+    animation: none;
+  }
+}
   </style>
   <script src="vs/loader.js"></script>
   <script type="text/javascript">
